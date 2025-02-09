@@ -40,14 +40,10 @@ func main() {
 			fmt.Printf("Error connecting to server (%s:%d): %v\n", config.Host, config.Port, err)
 			fmt.Printf("Retrying in %v...\n", backoff)
 			time.Sleep(backoff)
-			if backoff < 300*time.Second {
-				backoff *= 2
-			}
 			continue
 		}
 
 		fmt.Println("Connected to server")
-		backoff = 10 * time.Second
 
 		var ctx context.Context
 		ctx, cancelFunc = context.WithCancel(context.Background())
