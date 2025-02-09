@@ -4,7 +4,6 @@ import (
 	"encoding/gob"
 	"fmt"
 	"net"
-	"sync"
 
 	"github.com/sanda0/vps_pilot_agent/dto"
 	"github.com/sanda0/vps_pilot_agent/services"
@@ -21,17 +20,13 @@ func ConnectToTCPServer(host string, port int) (net.Conn, error) {
 	return conn, nil
 }
 
-func SendMsgToTCPServer(conn net.Conn, msgChan chan dto.Msg, wg *sync.WaitGroup) {
-
-	defer func() {
-		conn.Close()
-		wg.Done()
-	}()
-
+func SendMsgToTCPServer(conn net.Conn, msgChan chan dto.Msg, reconnect chan struct{}) {
+	defer conn.Close()
 	encoder := gob.NewEncoder(conn)
 	sysInfo, err := services.GetSystemInfo()
 	if err != nil {
 		fmt.Println("Error getting system info:", err)
+		reconnect <- struct{}{}
 		return
 	}
 	sysInfoJSON, err := sysInfo.ToJSON()
@@ -54,21 +49,25 @@ func SendMsgToTCPServer(conn net.Conn, msgChan chan dto.Msg, wg *sync.WaitGroup)
 			err = encoder.Encode(msg)
 			if err != nil {
 				fmt.Println("Error encoding message:", err)
+				break
 			}
 		}
 	}
+
+	reconnect <- struct{}{}
+
 }
 
-func ReadMsgFromTCPServer(conn net.Conn, wg *sync.WaitGroup) {
-
-	defer wg.Done()
-
+func ReadMsgFromTCPServer(conn net.Conn, reconnect chan struct{}) {
+	defer conn.Close()
 	decoder := gob.NewDecoder(conn)
 	var msg dto.Msg
 	for {
 		err := decoder.Decode(&msg)
 		if err != nil {
 			fmt.Println("Error decoding message:", err)
+			reconnect <- struct{}{}
+			return
 		}
 		if msg.Msg == "sys_stat" {
 			canSendStats = true
