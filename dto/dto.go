@@ -6,6 +6,8 @@ type SystemStat struct {
 	CPUUsage  []float64 `json:"cpu_usage"`
 	MemUsage  float64   `json:"mem_usage"`
 	DiskUsage float64   `json:"disk_usage"`
+	NetSentPS uint64    `json:"net_sent_ps"`
+	NetRecvPS uint64    `json:"net_recv_ps"`
 }
 
 type Config struct {

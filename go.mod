@@ -4,6 +4,7 @@ go 1.22.2
 
 require (
 	github.com/shirou/gopsutil v3.21.11+incompatible
+	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/shirou/gopsutil/v4 v4.24.12
 )
 
